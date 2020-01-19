@@ -17,19 +17,21 @@ htmltext = requests.get(url).text
 # split text based on line ends
 lines = htmltext.splitlines()
 # print(lines[1])
+listofrows = []
+for n in lines:
+    #print(n)
+    #timestamp is 1-24
+    time = n[1:24]
+    #print (time)
+    # username = 25 + 1 for space through first colon after 25
+    username = n[26:n.find(':',25)]
+    # print(username)
+    # chat message = first colon after 25(+1 for colon + 1 for space) through end of line
+    message = n[n.find(':',25)+2:]
+    # print (message)
+    # put pieces into list
+    row = [time,username,message]
+    # print (row)
+    listofrows.append(row)
 
-#timestamp is 1-24
-time = lines[1][1:24]
-# print (time)
-
-# username = 25 + 1 for space through first colon after 25
-username = lines[1][26:lines[1].find(':',25)]
-# print(username)
-
-# chat message = first colon after 25(+1 for colon + 1 for space) through end of line
-message = lines[1][lines[1].find(':',25)+2:]
-# print (message)
-
-# put pieces into list
-row = [time,username,message]
-print (row)
+print(listofrows)
