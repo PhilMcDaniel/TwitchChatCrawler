@@ -1,11 +1,12 @@
-from math import radians
-import numpy as np     # installed with matplotlib
-import matplotlib.pyplot as plt
+import requests
+from bs4 import BeautifulSoup
 
-def main():
-    x = np.arange(0, radians(1800), radians(12))
-    plt.plot(x, np.cos(x), 'b')
-    plt.show()
+#pick url to parse
+url = 'https://overrustlelogs.net/2mgovercsquared%20chatlog'
+#get html from url via requests
+htmltext = requests.get(url).text
+#send html to bs4
+soup = BeautifulSoup(htmltext, 'html.parser')
+print(soup.prettify())
 
-main()
-#comment to test change detection
+#loop through all href= links. These are the months for the chatlogs
