@@ -1,6 +1,7 @@
 import requests
 import bs4 as soup
 from bs4 import BeautifulSoup
+import pandas as pd
 
 #loop through site to get logs for all days in a month
 #loop through site to get logs for all months available
@@ -13,20 +14,22 @@ url = 'https://overrustlelogs.net/2mgovercsquared%20chatlog/January%202020/2020-
 htmltext = requests.get(url).text
 # print(htmltext)
 
-#split text based on line ends
+# split text based on line ends
 lines = htmltext.splitlines()
-print(lines[1])
+# print(lines[1])
 
-#timestamp is 1-24, username = 25 through first colon after 25
+#timestamp is 1-24
 time = lines[1][1:24]
-print (time)
+# print (time)
 
-username = lines[1][25:]
-print(username)
+# username = 25 + 1 for space through first colon after 25
+username = lines[1][26:lines[1].find(':',25)]
+# print(username)
 
-#parse text from single day's chatlogs
+# chat message = first colon after 25(+1 for colon + 1 for space) through end of line
+message = lines[1][lines[1].find(':',25)+2:]
+# print (message)
 
-
-#separate datetime
-#separate user
-#serarate chatmessage
+# put pieces into list
+row = [time,username,message]
+print (row)
