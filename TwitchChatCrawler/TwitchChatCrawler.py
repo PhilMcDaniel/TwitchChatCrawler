@@ -2,6 +2,7 @@ import requests
 import bs4 as soup
 from bs4 import BeautifulSoup
 import pandas as pd
+import sqlalchemy
 
 #loop through site to get logs for all days in a month
 #loop through site to get logs for all months available
@@ -20,8 +21,8 @@ lines = htmltext.splitlines()
 listofrows = []
 for n in lines:
     #print(n)
-    #timestamp is 1-24
-    time = n[1:24]
+    #timestamp is 1-19
+    time = n[1:20]
     #print (time)
     # username = 25 + 1 for space through first colon after 25
     username = n[26:n.find(':',25)]
@@ -35,3 +36,26 @@ for n in lines:
     listofrows.append(row)
 
 print(listofrows)
+df = pd.DataFrame(data = listofrows)
+df.columns = ['Message_DTM','Username','Message_TXT']
+# df
+
+
+# database parameters
+DB = {'servername': 'PHIL-PC\SQLEXPRESS',
+      'database': 'TwitchChat_DB',
+      'driver': 'driver=SQL Server Native Client 11.0'}
+
+# create the connection
+engine = create_engine('mssql+pyodbc://' + DB['servername'] + '/' + DB['database'] + "?" + DB['driver'])
+
+# write data to sql server
+df.to_sql('Chat_Message_F'
+          , index=False
+          , con=engine
+          , if_exists='replace'
+          , chunksize=100
+          )
+
+# readback as a test to see if insert worked
+pd.read_sql('SELECT * FROM Chat_Message_F', engine)
