@@ -20,6 +20,7 @@ lines = htmltext.splitlines()
 # print(lines[1])
 listofrows = []
 for n in lines:
+    channel = '2mgovercsquared'
     #print(n)
     #timestamp is 1-19
     time = n[1:20]
@@ -31,29 +32,30 @@ for n in lines:
     message = n[n.find(':',25)+2:]
     # print (message)
     # put pieces into list
-    row = [time,username,message]
+    row = [channel,time,username,message]
     # print (row)
     listofrows.append(row)
 
 print(listofrows)
 df = pd.DataFrame(data = listofrows)
-df.columns = ['Message_DTM','Username','Message_TXT']
+df.columns = ['Channel_NME','Message_DTM','Username','Message_TXT']
 # df
-
+df
 
 # database parameters
-DB = {'servername': 'PHIL-PC\SQLEXPRESS',
+DB = {'servername': 'DESKTOP-1ERS7HG\SQLEXPRESS',
       'database': 'TwitchChat_DB',
       'driver': 'driver=SQL Server Native Client 11.0'}
 
 # create the connection
 engine = create_engine('mssql+pyodbc://' + DB['servername'] + '/' + DB['database'] + "?" + DB['driver'])
 
+
 # write data to sql server
 df.to_sql('Chat_Message_F'
           , index=False
           , con=engine
-          , if_exists='replace'
+          , if_exists='append'
           , chunksize=100
           )
 
