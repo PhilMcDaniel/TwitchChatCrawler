@@ -2,7 +2,7 @@ import requests
 import bs4 as soup
 from bs4 import BeautifulSoup
 import pandas as pd
-import sqlalchemy
+from sqlalchemy import create_engine
 
 #loop through site to get logs for all days in a month
 #loop through site to get logs for all months available
@@ -10,6 +10,11 @@ import sqlalchemy
 #pick url to parse
 url = 'https://overrustlelogs.net/2mgovercsquared%20chatlog/January%202020/2020-01-18'+ '.txt'
 #print (url)
+#get channel name. starts @27 and ends @%20
+start = 27
+end = url.find('%20',0,-1)
+channel = url[start:end]
+#print(channel)
 
 #get html from url via requests
 htmltext = requests.get(url).text
@@ -20,7 +25,7 @@ lines = htmltext.splitlines()
 # print(lines[1])
 listofrows = []
 for n in lines:
-    channel = '2mgovercsquared'
+    
     #print(n)
     #timestamp is 1-19
     time = n[1:20]
@@ -36,11 +41,10 @@ for n in lines:
     # print (row)
     listofrows.append(row)
 
-print(listofrows)
+#print(listofrows)
 df = pd.DataFrame(data = listofrows)
 df.columns = ['Channel_NME','Message_DTM','Username','Message_TXT']
 # df
-df
 
 # database parameters
 DB = {'servername': 'DESKTOP-1ERS7HG\SQLEXPRESS',
