@@ -3,48 +3,7 @@ import bs4 as soup
 from bs4 import BeautifulSoup
 import pandas as pd
 from sqlalchemy import create_engine
-
-#loop through site to get logs for all days in a month
-#loop through site to get logs for all months available
-
-#pick url to parse
-url = 'https://overrustlelogs.net/2mgovercsquared%20chatlog/January%202020/2020-01-18'+ '.txt'
-#print (url)
-#get channel name. starts @27 and ends @%20
-start = 27
-end = url.find('%20',0,-1)
-channel = url[start:end]
-#print(channel)
-
-#get html from url via requests
-htmltext = requests.get(url).text
-# print(htmltext)
-
-# split text based on line ends
-lines = htmltext.splitlines()
-# print(lines[1])
-listofrows = []
-for n in lines:
-    
-    #print(n)
-    #timestamp is 1-19
-    time = n[1:20]
-    #print (time)
-    # username = 25 + 1 for space through first colon after 25
-    username = n[26:n.find(':',25)]
-    # print(username)
-    # chat message = first colon after 25(+1 for colon + 1 for space) through end of line
-    message = n[n.find(':',25)+2:]
-    # print (message)
-    # put pieces into list
-    row = [channel,time,username,message]
-    # print (row)
-    listofrows.append(row)
-
-#print(listofrows)
-df = pd.DataFrame(data = listofrows)
-df.columns = ['Channel_NME','Message_DTM','Username','Message_TXT']
-# df
+import re
 
 # database parameters
 DB = {'servername': 'DESKTOP-1ERS7HG\SQLEXPRESS',
@@ -54,14 +13,69 @@ DB = {'servername': 'DESKTOP-1ERS7HG\SQLEXPRESS',
 # create the connection
 engine = create_engine('mssql+pyodbc://' + DB['servername'] + '/' + DB['database'] + "?" + DB['driver'])
 
+# base url, variables will be used for the rest of the link
+base = 'https://overrustlelogs.net'
 
-# write data to sql server
-df.to_sql('Chat_Message_F'
-          , index=False
-          , con=engine
-          , if_exists='append'
-          , chunksize=100
-          )
+# at month level, read html text to get list of daily links later
+soup = BeautifulSoup(requests.get(base+'/2mgovercsquared%20chatlog/March%202020').text, 'html.parser')
+# print(soup)
 
-# readback as a test to see if insert worked
-pd.read_sql('SELECT * FROM Chat_Message_F', engine)
+# loop through all links that end in 10 char date format
+for link in soup.find_all('a'):
+    dayurl = ''
+    links = base+link.get('href')
+    # print(links)
+
+    m = re.search(r"[\d]{4}-[\d]{1,2}-[\d]{1,2}",(links[len(links)-10:len(links)]))
+    # if the pattern matches do stuff
+    if m:
+        dayurl = base+link.get('href')
+        print(dayurl)
+        # get html from url via requests
+        htmltext = requests.get(dayurl+'.txt').text
+        # print(htmltext)
+        
+        # split text based on line ends
+        lines = htmltext.splitlines()
+        # print(lines[1])
+
+        # get channel name. starts @27 and ends @%20
+        start = 27
+        end = dayurl.find(' chatlog',0,-1)
+        channel = dayurl[start:end]
+        # print(channel)
+
+        listofrows = []
+        for n in lines:
+            # initialize data frame
+            df = pd.DataFrame()
+            # print(n)
+
+            # timestamp is 1-19
+            time = n[1:20]
+            # print (time)
+            # username = 25 + 1 for space through first colon after 25
+            username = n[26:n.find(':',25)]
+            # print(username)
+            # chat message = first colon after 25(+1 for colon + 1 for space) through end of line
+            message = n[n.find(':',25)+2:]
+            # print (message)
+            # put pieces into list
+            row = [channel,time,username,message]
+            # print (row)
+            listofrows.append(row)
+            # print(listofrows)
+            df = pd.DataFrame(data = listofrows)
+            df.columns = ['Channel_NME','Message_DTM','Username','Message_TXT']
+        # df
+
+        # write data to sql server
+        df.to_sql('Chat_Message_F'
+                    , index=False
+                    , con=engine
+                    , if_exists='append'
+                    , chunksize=100
+                    )
+
+        # readback as a test to see if insert worked
+        # pd.read_sql('SELECT * FROM Chat_Message_F', engine)
