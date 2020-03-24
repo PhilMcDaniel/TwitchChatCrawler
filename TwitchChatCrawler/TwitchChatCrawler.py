@@ -1,14 +1,19 @@
 import requests
-import bs4 as soup
 from bs4 import BeautifulSoup
 import pandas as pd
 from sqlalchemy import create_engine
 import re
+import uuid
+
 
 # database parameters
 DB = {'servername': 'DESKTOP-1ERS7HG\SQLEXPRESS',
       'database': 'TwitchChat_DB',
       'driver': 'driver=SQL Server Native Client 11.0'}
+
+# create guid for batch
+batchid = uuid.uuid4()
+
 
 # create the connection
 engine = create_engine('mssql+pyodbc://' + DB['servername'] + '/' + DB['database'] + "?" + DB['driver'])
@@ -46,14 +51,20 @@ for link in soup.find_all('a'):
         # print(channel)
 
         listofrows = []
+        # initialize data frame
+        df = pd.DataFrame()
+        
         for n in lines:
-            # initialize data frame
-            df = pd.DataFrame()
             # print(n)
 
+            # date is first 10 char
+            date = n[1:11]
+            # print (date)
+
             # timestamp is 1-19
-            time = n[1:20]
-            # print (time)
+            datetime = n[1:20]
+            # print (datetime)
+
             # username = 25 + 1 for space through first colon after 25
             username = n[26:n.find(':',25)]
             # print(username)
@@ -61,12 +72,13 @@ for link in soup.find_all('a'):
             message = n[n.find(':',25)+2:]
             # print (message)
             # put pieces into list
-            row = [channel,time,username,message]
+            row = [batchid,channel,date,datetime,username,message]
             # print (row)
             listofrows.append(row)
             # print(listofrows)
+            
             df = pd.DataFrame(data = listofrows)
-            df.columns = ['Channel_NME','Message_DTM','Username','Message_TXT']
+            df.columns = ['ETL_Batch_ID','Channel_NME','Message_DTE','Message_DTM','Username_TXT','Message_TXT']
         # df
 
         # write data to sql server
